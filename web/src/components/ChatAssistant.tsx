@@ -104,11 +104,19 @@ export function ChatAssistant({ onOpenInCatalog }: ChatAssistantProps) {
       ]);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro desconhecido";
+      const isProd = !import.meta.env.DEV;
+      const hint401 = /401|Incorrect API key/i.test(msg)
+        ? isProd
+          ? "\n\n**Produção (Vercel):** em [vercel.com](https://vercel.com) → teu projeto → **Settings → Environment Variables** → edita `OPENAI_API_KEY`. Cola a chave **completa** (começa por `sk-proj-`, não `k-proj-`). Guarda e faz **Redeploy**."
+          : "\n\n**Local:** confere `web/.env.example` ou `web/.env` — a chave deve começar por `sk-proj-`."
+        : isProd
+          ? "\n\n**Produção:** confere `OPENAI_API_KEY` nas Environment Variables da Vercel e faz Redeploy."
+          : "\n\n**Local:** corre `npm run dev` e define `OPENAI_API_KEY` em `web/.env.example` ou `web/.env`.";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `Não consegui responder: ${msg}\n\nVerifica se o servidor está a correr (\`npm run dev\`) e se tens \`OPENAI_API_KEY\` em web/.env.example ou web/.env`,
+          content: `Não consegui responder: ${msg}${hint401}`,
         },
       ]);
     } finally {

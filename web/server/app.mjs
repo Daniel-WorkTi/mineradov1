@@ -14,6 +14,7 @@ import {
 } from "./catalog-tools.mjs";
 import { CHAT_MAX_PRODUCTS, getChatProductLimit } from "./chat-constants.mjs";
 import { loadWebEnv } from "./load-env.mjs";
+import { getOpenAIApiKey } from "./openai-env.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(__dirname, "..");
@@ -63,12 +64,15 @@ function ensureCatalog() {
 }
 
 app.get("/api/health", (_req, res) => {
-  const hasKey = Boolean(process.env.OPENAI_API_KEY);
+  const keyStatus = getOpenAIApiKey();
   try {
     ensureCatalog();
     res.json({
       ok: true,
-      openai: hasKey,
+      openai: Boolean(keyStatus.key),
+      openai_key_valid: Boolean(keyStatus.key),
+      openai_key_error: keyStatus.error,
+      openai_key_hint: keyStatus.hint || null,
       model: MODEL,
       persona: "Ecomhub PRO",
       ecomhubGptUrl: ECOMHUB_PRO_GPT_URL,
@@ -81,11 +85,13 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.post("/api/chat", async (req, res) => {
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({
-      error:
-        "OPENAI_API_KEY não configurada. Define na Vercel (Environment Variables) ou em web/.env local.",
-    });
+  const keyStatus = getOpenAIApiKey();
+  if (!keyStatus.key) {
+    const msg =
+      keyStatus.error === "invalid_format"
+        ? `OPENAI_API_KEY inválida. ${keyStatus.hint} Na Vercel: Settings → Environment Variables → edita OPENAI_API_KEY (valor completo, começa por sk-) e faz Redeploy.`
+        : "OPENAI_API_KEY não configurada. Na Vercel: Environment Variables; local: web/.env ou web/.env.example.";
+    return res.status(503).json({ error: msg });
   }
 
   const { messages = [] } = req.body;
@@ -101,7 +107,7 @@ app.post("/api/chat", async (req, res) => {
     const userContext = lastUser?.content || "";
     const productLimit = getChatProductLimit(userContext);
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ apiKey: keyStatus.key });
     const systemPrompt = loadSystemPrompt();
 
     const chatMessages = [
