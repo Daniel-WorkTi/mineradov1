@@ -1,0 +1,28 @@
+{
+  "dropi_total": 1174,
+  "ecomhub_total": 1161,
+  "minerado_unificado": 2335,
+  "matches_confiaveis": 5,
+  "matches_revisar": 16,
+  "dropi_exclusivos": 1169,
+  "ecomhub_exclusivos": 1156,
+  "oportunidades_dropi_mais_barato": 5,
+  "oportunidades_ecomhub_mais_barato": 0,
+  "oportunidades_estoque": 38,
+  "dropi_baixo_ecom_alto": 2,
+  "atualizado_em": "2026-05-17T13:45:39.153675+00:00",
+  "min_score": 0.72,
+  "review_score": 0.58,
+  "min_stock": 10,
+  "arquivos": {
+    "minerado_unificado": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/minerado_unificado.csv",
+    "ranking_dropi": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/ranking_dropi_exclusivos.csv",
+    "ranking_ecomhub": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/ranking_ecomhub_exclusivos.csv",
+    "matches": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/matches.csv",
+    "matches_revisar": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/matches_revisar.csv",
+    "oportunidades_dropi": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/oportunidades_mais_barato_dropi.csv",
+    "oportunidades_ecomhub": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/oportunidades_mais_barato_ecomhub.csv",
+    "dropi_exclusivos": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/dropi_exclusivos.csv",
+    "ecomhub_exclusivos": "/Users/lucasgalhardo/Documents/DANIEL MAIA/api-produtos/output/ecomhub_exclusivos.csv"
+  }
+}

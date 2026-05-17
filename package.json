@@ -1,0 +1,14 @@
+{
+  "name": "api-produtos",
+  "private": true,
+  "description": "Minerador Dropi × EcomHub — scripts na raiz, dashboard em web/",
+  "scripts": {
+    "dev": "npm run dev --prefix web",
+    "dev:web": "npm run dev:web --prefix web",
+    "build": "npm run build --prefix web",
+    "prepare-data": "npm run prepare-data --prefix web",
+    "miner": "python3 miner.py",
+    "install:web": "npm install --prefix web",
+    "stop": "bash -c 'for p in 3001 5173 5174; do pid=$(lsof -ti :$p 2>/dev/null); [ -n \"$pid\" ] && kill -9 $pid && echo \"Porta $p libertada\"; done; echo Pronto.'"
+  }
+}

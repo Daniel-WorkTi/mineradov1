@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  --surface-0: #09090b;
+  --surface-1: #111113;
+  --surface-2: #18181b;
+  --surface-3: #27272a;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface-0);
+  color: var(--text);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1536px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.125rem;
+  }
+}
+
+.panel {
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border-radius: 12px;
+}
+
+.chat-message strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.chat-message p {
+  color: var(--text-muted);
+}
+
+.chat-message h3,
+.chat-message h4 {
+  color: var(--text);
+}

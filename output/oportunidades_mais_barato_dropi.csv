@@ -1,0 +1,6 @@
+﻿score,dropi_id,dropi_nome,dropi_preco,dropi_stock,ecomhub_id,ecomhub_nome,ecomhub_sku,ecomhub_preco,ecomhub_envio,ecomhub_stock,custo_ecomhub_total,diff_preco,mais_barato,margem_pct,score_oportunidade
+0.976,1408,Depiladora de laser IPL,12.99,434,1e4d83f3-e73d-442c-b873-fce46be0eab6,Depiladora Laser IPL,depilas_14671,24.98,1.5,100,26.48,-13.49,dropi,50.9,73.78
+1.0,196,Mini localizador GPS magnético,3.99,1266,f2227062-b6ed-4c41-8da0-b43d6f1b67ee,Mini localizador GPS magnético,gpsmagn_15204,4.73,1.5,100,6.23,-2.24,dropi,36.0,59.48
+0.978,307,Masajeador 4 en 1 anticelulítico,6.95,107,c6ca7292-4e12-466f-8b29-b91c1d762517,Masajeador 3 em 1 anticelulítico,celul4en1_14448,9.68,1.5,40,11.18,-4.23,dropi,37.8,59.37
+1.0,224,Cortador verduras 8in1,5.99,58,28ed2eea-448f-45d9-babd-6709eb4a2779,Cortador verduras 8in1,corta8en1_14571,7.13,1.5,400,8.629999999999999,-2.64,dropi,30.6,58.18
+0.765,9,Bandas elásticas ejercicio,3.99,848,b2481886-9ba1-438a-9109-7342bc2879fa,Bandas Elasticas,ligaselasticas_14352,4.07,1.5,200,5.57,-1.58,dropi,28.4,51.41
