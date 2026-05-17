@@ -1,0 +1,15 @@
+{
+  "installCommand": "npm install --prefix web",
+  "buildCommand": "npm run build:vercel --prefix web",
+  "outputDirectory": "web/dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "web/public/data/**",
+      "maxDuration": 60
+    }
+  }
+}

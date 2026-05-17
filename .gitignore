@@ -7,6 +7,12 @@
 **/.env.local
 **/.env.*.local
 
+# Tokens e chaves (nunca commitar ficheiros com estes padrões)
+**/secrets*
+**/*credentials*
+**/*.pem
+**/*.key
+
 # Python
 __pycache__/
 *.py[cod]
