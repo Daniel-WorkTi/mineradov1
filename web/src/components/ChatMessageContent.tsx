@@ -1,5 +1,36 @@
 import type { ReactNode } from "react";
 
+/** Remove / simplifica blocos LaTeX que o modelo às vezes envia (o chat não tem MathJax). */
+function normalizeAssistantLatex(text: string): string {
+  let out = text.replace(/\\\[[\s\S]*?\\\]/g, (block) => {
+    const inner = block.slice(2, -2);
+    const approx = inner.match(/\\approx\s*([\d.,]+)/);
+    if (approx) {
+      return `\n\n**Resultado (aprox.):** ${approx[1].replace(",", ".")} € — confirma com os teus custos reais.\n\n`;
+    }
+    const flat = inner
+      .replace(/\\text\{([^}]*)\}/g, "$1")
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "($1) / ($2)")
+      .replace(/\\approx/g, "≈")
+      .replace(/\\times/g, "×")
+      .replace(/\\\\/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return flat
+      ? `\n\n*Cálculo (texto plano):* ${flat.slice(0, 500)}${flat.length > 500 ? "…" : ""}\n\n`
+      : "\n\n";
+  });
+  out = out.replace(/\\\([\s\S]*?\\\)/g, (m) =>
+    m
+      .slice(2, -2)
+      .replace(/\\text\{([^}]*)\}/g, "$1")
+      .replace(/\\approx/g, "≈")
+      .replace(/\\times/g, "×")
+      .trim()
+  );
+  return out;
+}
+
 /** Formatação simples das respostas do assistente (sem dependências extra). */
 
 function renderInline(text: string) {
@@ -25,7 +56,7 @@ function isNumbered(line: string) {
 }
 
 export function ChatMessageContent({ content }: { content: string }) {
-  const lines = content.split("\n");
+  const lines = normalizeAssistantLatex(content).split("\n");
   const blocks: ReactNode[] = [];
   let listItems: string[] = [];
   let listType: "ul" | "ol" | null = null;

@@ -1,0 +1,4 @@
+# Opcional: tendências Google via pytrends (usado pelo google_trends_cli.py)
+# Instalação: pip install -r services/requirements-mining.txt
+pytrends>=4.9.2
+pandas>=2.0.0

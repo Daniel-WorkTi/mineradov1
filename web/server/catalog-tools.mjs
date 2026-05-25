@@ -209,6 +209,8 @@ export function fillProductsToLimit(current, cap, userContext, catalog) {
 
 /** Cards finais: junta resposta + ferramentas e preenche até ao limite pedido. */
 export function resolveChatProducts(toolProducts, reply, userContext, catalog, limit = CHAT_MAX_PRODUCTS) {
+  if (!limit || limit < 1) return [];
+
   const cap = Math.min(Math.max(1, limit), CHAT_MAX_PRODUCTS);
 
   const fromReply = extractProductsMentionedInText(reply, catalog, cap);

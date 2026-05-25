@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "npm run dev --prefix web",
     "dev:web": "npm run dev:web --prefix web",
+    "restart": "npm run stop && npm run dev",
     "build": "npm run build --prefix web",
     "prepare-data": "npm run prepare-data --prefix web",
     "miner": "python3 miner.py",
