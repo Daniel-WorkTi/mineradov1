@@ -4,6 +4,10 @@ import {
   getOpenAIApiKey,
   openAIKeyErrorMessage,
 } from "../openai-env.mjs";
+import {
+  getEronoStylePromptBlock,
+  loadEronoStyleReferenceFile,
+} from "../styles/eronStoreStyle.mjs";
 
 /** Modelo GPT Image nativo (mesmo ecossistema do ChatGPT). */
 export const CAMPAIGN_IMAGE_MODEL =
@@ -50,16 +54,15 @@ export function buildImageGenerationPrompt(input) {
       : "Square 1:1 feed ad composition.";
 
   const refNote = input.withReference
-    ? "Use the EXACT product from the reference photo — same design, colors, shape, proportions. Do not redesign the product."
+    ? "INPUT IMAGES: (1) USER PRODUCT — keep this exact product identity. (2) ERONO STYLE REFERENCE — copy ONLY photography style (white studio, soft shadow, Spain COD premium ecommerce), NOT the product from image 2."
     : "Keep the product design, colors and proportions accurate.";
 
   return [
-    "Ultra photorealistic premium ecommerce commercial, DJI Apple tech aesthetic.",
+    getEronoStylePromptBlock(),
     `Product: "${title}".`,
     desc ? `Context: ${desc}` : "",
     refNote,
-    "Professional cinematic lighting, luxury minimal background.",
-    "No watermark, no distorted text.",
+    "No watermark, no distorted text, no cluttered badges.",
     layout,
     "Creative brief:",
     scene,
@@ -159,15 +162,30 @@ async function generateViaGptImageEdit(openai, params) {
   });
   const size = resolveSize(params.format, model);
   const quality = resolveImageQuality(model);
-  const imageFile = await referenceFileFromDataUrl(params.productImageDataUrl);
+  const productFile = await referenceFileFromDataUrl(
+    params.productImageDataUrl
+  );
+  /** @type {import("openai").Uploadable[]} */
+  let imageInputs = [productFile];
+  let method = "gpt-image-edit";
+
+  try {
+    const styleFile = await loadEronoStyleReferenceFile();
+    imageInputs = [productFile, styleFile];
+    method = "gpt-image-edit-eronostyle";
+  } catch {
+    /* gera só com produto se a referência ERONO não carregar */
+  }
 
   const response = await openai.images.edit({
     model,
-    image: imageFile,
+    image: imageInputs.length > 1 ? imageInputs : productFile,
     prompt,
     n: 1,
     size,
     quality,
+    input_fidelity: "high",
+    background: "opaque",
   });
 
   const b64 = response.data?.[0]?.b64_json;
@@ -176,7 +194,7 @@ async function generateViaGptImageEdit(openai, params) {
   return {
     imageDataUrl: `data:image/png;base64,${b64}`,
     model,
-    method: "gpt-image-edit",
+    method,
     size,
     revisedPrompt: null,
   };

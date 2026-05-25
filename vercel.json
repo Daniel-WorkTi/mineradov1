@@ -8,7 +8,7 @@
   ],
   "functions": {
     "api/index.mjs": {
-      "includeFiles": "web/public/data/**,services/**",
+      "includeFiles": "web/public/data/**,web/shared/**,services/**",
       "maxDuration": 60
     }
   }

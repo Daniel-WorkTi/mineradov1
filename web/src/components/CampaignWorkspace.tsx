@@ -15,6 +15,7 @@ import {
   fullPromptText,
   type CampaignPromptCard,
 } from "../utils/parseCampaignPrompts";
+import { ERONO_STORE } from "../utils/eronStoreStyle";
 import {
   buildProductImageCards,
   PRODUCT_IMAGE_COUNT,
@@ -255,7 +256,7 @@ export function CampaignWorkspace({
               Imagens do produto
             </h2>
             <p className="truncate text-xs text-zinc-500">
-              4 imagens (2 verticais + 2 quadradas) · GPT Image
+              Estilo {ERONO_STORE.storeName} · 4 imagens · GPT Image
             </p>
           </div>
         </div>
@@ -350,10 +351,23 @@ export function CampaignWorkspace({
               description={`${productDescription.length} chars · mín. 30`}
             />
 
+            <p className="rounded-lg border border-zinc-700/80 bg-zinc-900/60 px-3 py-2 text-[11px] leading-relaxed text-zinc-400">
+              Referência visual:{" "}
+              <a
+                href={ERONO_STORE.productPageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-400 underline"
+              >
+                página Erono (conversão ES)
+              </a>
+              — fundo branco, produto hero, pack e lifestyle como na loja.
+            </p>
+
             <Textarea
               label="Nota extra (opcional)"
               labelPlacement="outside"
-              placeholder="Ex.: fundo branco, tom premium, sem texto grande…"
+              placeholder="Ex.: incluir 2 correas na foto pack, cor preta…"
               value={extraNote}
               onValueChange={setExtraNote}
               minRows={2}
