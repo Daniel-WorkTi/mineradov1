@@ -1,5 +1,5 @@
-const MAX_SIDE = 1600;
-const MAX_BYTES = 1_400_000;
+const MAX_SIDE = 1280;
+const MAX_BYTES = 900_000;
 const JPEG_QUALITY = 0.82;
 
 function loadImage(src: string): Promise<HTMLImageElement> {

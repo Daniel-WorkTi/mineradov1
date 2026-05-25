@@ -11,6 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import { fileToCampaignImageDataUrl } from "../utils/campaignImageUpload";
+import { parseApiResponse } from "../utils/parseApiResponse";
 import {
   fullPromptText,
   type CampaignPromptCard,
@@ -55,6 +56,7 @@ export function CampaignWorkspace({
   );
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [apiKeyHint, setApiKeyHint] = useState<string | null>(null);
+  const [lastBriefId, setLastBriefId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -121,25 +123,48 @@ export function CampaignWorkspace({
     return null;
   }
 
-  async function generateOneImage(card: CampaignPromptCard) {
+  async function registerBrief(): Promise<string> {
+    const res = await fetch("/api/campaign/brief", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productTitle: productTitle.trim(),
+        productDescription: productDescription.trim(),
+        productImageDataUrl: productImageDataUrl,
+        extraNote: extraNote.trim() || undefined,
+      }),
+    });
+    const data = await parseApiResponse<{ briefId?: string; error?: string }>(res);
+    if (!res.ok) throw new Error(data.error || "Erro ao preparar briefing");
+    if (!data.briefId) throw new Error("Servidor não devolveu briefId.");
+    return data.briefId;
+  }
+
+  async function generateOneImage(
+    card: CampaignPromptCard,
+    briefId: string
+  ) {
     const res = await fetch("/api/campaign/generate-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         cardId: card.id,
-        prompt: fullPromptText(card),
-        format: card.format,
-        productTitle: productTitle.trim(),
-        productDescription: productDescription.trim(),
-        productImageDataUrl: productImageDataUrl || undefined,
+        briefId,
       }),
     });
-    const data = await res.json();
+    const data = await parseApiResponse<{
+      imageDataUrl?: string;
+      error?: string;
+    }>(res);
     if (!res.ok) throw new Error(data.error || "Erro ao gerar imagem");
-    return data.imageDataUrl as string;
+    if (!data.imageDataUrl) throw new Error("Resposta sem imagem.");
+    return data.imageDataUrl;
   }
 
-  async function generateAllImages(cards: CampaignPromptCard[]) {
+  async function generateAllImages(
+    cards: CampaignPromptCard[],
+    briefId: string
+  ) {
     if (!cards.length) return;
     setGeneratingImages(true);
     setImageProgress({ done: 0, total: cards.length });
@@ -147,7 +172,8 @@ export function CampaignWorkspace({
       Object.fromEntries(cards.map((c) => [c.id, { status: "idle" as const }]))
     );
 
-    const CONCURRENCY = PRODUCT_IMAGE_COUNT;
+    /** 2 em paralelo — Vercel evita timeout/crash com 4 funções pesadas ao mesmo tempo */
+    const CONCURRENCY = 2;
     let index = 0;
 
     async function worker() {
@@ -159,7 +185,7 @@ export function CampaignWorkspace({
           [card.id]: { status: "loading" },
         }));
         try {
-          const imageDataUrl = await generateOneImage(card);
+          const imageDataUrl = await generateOneImage(card, briefId);
           setImagesById((prev) => ({
             ...prev,
             [card.id]: { status: "done", imageDataUrl },
@@ -201,7 +227,17 @@ export function CampaignWorkspace({
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
-    await generateAllImages(cards);
+    let briefId: string;
+    try {
+      briefId = await registerBrief();
+      setLastBriefId(briefId);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao enviar briefing";
+      setFormError(msg);
+      return;
+    }
+
+    await generateAllImages(cards, briefId);
   }
 
   async function copyPrompt(card: CampaignPromptCard) {
@@ -215,6 +251,7 @@ export function CampaignWorkspace({
     setResultCards([]);
     setImagesById({});
     setImageProgress({ done: 0, total: 0 });
+    setLastBriefId(null);
   }
 
   function downloadImage(cardId: string, dataUrl: string) {
@@ -224,13 +261,16 @@ export function CampaignWorkspace({
     a.click();
   }
 
-  async function generateOneImageRetry(card: CampaignPromptCard) {
+  async function generateOneImageRetry(
+    card: CampaignPromptCard,
+    briefId: string
+  ) {
     setImagesById((prev) => ({
       ...prev,
       [card.id]: { status: "loading" },
     }));
     try {
-      const imageDataUrl = await generateOneImage(card);
+      const imageDataUrl = await generateOneImage(card, briefId);
       setImagesById((prev) => ({
         ...prev,
         [card.id]: { status: "done", imageDataUrl },
@@ -455,7 +495,13 @@ export function CampaignWorkspace({
                 copiedId={copiedId}
                 imagesById={imagesById}
                 onCopy={copyPrompt}
-                onRetryImage={generateOneImageRetry}
+                onRetryImage={(card) => {
+                  if (!lastBriefId) {
+                    setFormError("Gera de novo — sessão do briefing expirou.");
+                    return;
+                  }
+                  void generateOneImageRetry(card, lastBriefId);
+                }}
                 onDownload={downloadImage}
               />
             )}

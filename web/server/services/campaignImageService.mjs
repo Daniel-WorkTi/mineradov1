@@ -19,6 +19,19 @@ const GPT_RESPONSE_MODEL =
   "gpt-4o";
 
 const MAX_PROMPT_CHARS = 3500;
+/** Vercel limita resposta ~4.5 MB — JPEG comprimido evita crash sem JSON. */
+const MAX_RESPONSE_DATA_URL_CHARS = 3_400_000;
+
+function toImageDataUrl(b64, format = "jpeg") {
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  const dataUrl = `data:${mime};base64,${b64}`;
+  if (dataUrl.length > MAX_RESPONSE_DATA_URL_CHARS) {
+    throw new Error(
+      "Imagem gerada demasiado grande para a Vercel. Usa foto do produto mais pequena ou CAMPAIGN_IMAGE_QUALITY=medium."
+    );
+  }
+  return dataUrl;
+}
 
 function isGptImageModel(model) {
   return String(model).startsWith("gpt-image");
@@ -140,7 +153,7 @@ async function generateViaGptResponses(openai, params) {
   }
 
   return {
-    imageDataUrl: `data:image/png;base64,${b64}`,
+    imageDataUrl: toImageDataUrl(b64, "png"),
     model: GPT_RESPONSE_MODEL,
     method: "gpt-responses",
     size,
@@ -186,13 +199,15 @@ async function generateViaGptImageEdit(openai, params) {
     quality,
     input_fidelity: "high",
     background: "opaque",
+    output_format: "jpeg",
+    output_compression: 82,
   });
 
   const b64 = response.data?.[0]?.b64_json;
   if (!b64) throw new Error("GPT Image edit não devolveu imagem.");
 
   return {
-    imageDataUrl: `data:image/png;base64,${b64}`,
+    imageDataUrl: toImageDataUrl(b64, "jpeg"),
     model,
     method,
     size,
@@ -222,6 +237,8 @@ async function generateViaGptImageGenerate(openai, params) {
     n: 1,
     size,
     quality,
+    output_format: "jpeg",
+    output_compression: 82,
   };
 
   if (!isGptImageModel(model)) {
@@ -234,7 +251,7 @@ async function generateViaGptImageGenerate(openai, params) {
   if (!b64) throw new Error("GPT Image generate não devolveu imagem.");
 
   return {
-    imageDataUrl: `data:image/png;base64,${b64}`,
+    imageDataUrl: toImageDataUrl(b64, "jpeg"),
     model,
     method: "gpt-image-generate",
     size,

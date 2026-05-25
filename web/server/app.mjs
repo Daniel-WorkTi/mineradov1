@@ -21,6 +21,8 @@ import { researchSingleProduct } from "./services/productResearchService.mjs";
 import { CHAT_MAX_PRODUCTS, getChatProductLimit } from "./chat-constants.mjs";
 import { loadWebEnv } from "./load-env.mjs";
 import { getOpenAIApiKey, openAIKeyErrorMessage } from "./openai-env.mjs";
+import { saveCampaignBrief, getCampaignBrief } from "./campaignBriefStore.mjs";
+import { getCardPrompt } from "./productImageSlots.mjs";
 import { generateCampaignImage } from "./services/campaignImageService.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -59,7 +61,22 @@ function loadSystemPrompt() {
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "12mb" }));
+app.use(express.json({ limit: "4mb" }));
+
+app.use((err, req, res, _next) => {
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({
+      error:
+        "Pedido demasiado grande (máx. ~4 MB na Vercel). Comprime a foto do produto.",
+    });
+  }
+  console.error("API error:", err);
+  if (!res.headersSent) {
+    res.status(500).json({
+      error: err?.message || "Erro interno no servidor.",
+    });
+  }
+});
 
 let catalog = null;
 
@@ -290,7 +307,36 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-/** Gera uma imagem de campanha (GPT Image) a partir do prompt do card. */
+/** Guarda briefing + foto uma vez (evita enviar a imagem 4× na Vercel). */
+app.post("/api/campaign/brief", async (req, res) => {
+  const keyMsg = openAIKeyErrorMessage(getOpenAIApiKey());
+  if (keyMsg) return res.status(503).json({ error: keyMsg });
+
+  const {
+    productTitle,
+    productDescription,
+    productImageDataUrl,
+    extraNote,
+  } = req.body || {};
+
+  if (!productImageDataUrl?.trim()) {
+    return res.status(400).json({ error: "Envia productImageDataUrl." });
+  }
+  if (!productTitle?.trim()) {
+    return res.status(400).json({ error: "Envia productTitle." });
+  }
+
+  const briefId = saveCampaignBrief({
+    productImageDataUrl: String(productImageDataUrl),
+    productTitle: String(productTitle),
+    productDescription: String(productDescription || ""),
+    extraNote: extraNote ? String(extraNote) : "",
+  });
+
+  res.json({ briefId });
+});
+
+/** Gera uma imagem (GPT Image) — usa briefId + cardId (V01, V02, Q01, Q02). */
 app.post("/api/campaign/generate-image", async (req, res) => {
   const keyStatus = getOpenAIApiKey();
   const keyMsg = openAIKeyErrorMessage(keyStatus);
@@ -298,32 +344,53 @@ app.post("/api/campaign/generate-image", async (req, res) => {
     return res.status(503).json({ error: keyMsg });
   }
 
-  const {
-    cardId,
-    prompt,
-    format,
-    productTitle,
-    productDescription,
-    productImageDataUrl,
-  } = req.body || {};
+  const { cardId, briefId, prompt, format, productTitle, productDescription, productImageDataUrl } =
+    req.body || {};
 
-  if (!cardId || !prompt?.trim()) {
+  if (!cardId) {
+    return res.status(400).json({ error: "Envia cardId (V01, V02, Q01, Q02)." });
+  }
+
+  let brief = briefId ? getCampaignBrief(briefId) : null;
+  let resolvedPrompt = prompt?.trim() ? String(prompt) : "";
+  let resolvedFormat = format === "vertical" ? "vertical" : "square";
+  let title = productTitle ? String(productTitle) : "";
+  let description = productDescription ? String(productDescription) : "";
+  let imageUrl = productImageDataUrl ? String(productImageDataUrl) : undefined;
+
+  if (brief) {
+    title = brief.productTitle;
+    description = brief.productDescription;
+    imageUrl = brief.productImageDataUrl;
+    const built = getCardPrompt(String(cardId), {
+      productTitle: title,
+      productDescription: description,
+      extraNote: brief.extraNote,
+    });
+    if (!built) {
+      return res.status(400).json({ error: `cardId inválido: ${cardId}` });
+    }
+    resolvedPrompt = built.prompt;
+    resolvedFormat = built.card.format;
+  } else if (!resolvedPrompt) {
     return res.status(400).json({
-      error: "Envia cardId e prompt no body JSON.",
+      error: "Envia briefId (recomendado) ou prompt completo.",
+    });
+  }
+
+  if (!imageUrl) {
+    return res.status(400).json({
+      error: "Falta imagem do produto. Gera de novo a partir do briefing.",
     });
   }
 
   try {
     const result = await generateCampaignImage({
-      prompt: String(prompt),
-      format: format === "vertical" ? "vertical" : "square",
-      productTitle: productTitle ? String(productTitle) : "",
-      productDescription: productDescription
-        ? String(productDescription)
-        : "",
-      productImageDataUrl: productImageDataUrl
-        ? String(productImageDataUrl)
-        : undefined,
+      prompt: resolvedPrompt,
+      format: resolvedFormat,
+      productTitle: title,
+      productDescription: description,
+      productImageDataUrl: imageUrl,
     });
 
     res.json({
